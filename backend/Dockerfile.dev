@@ -1,0 +1,28 @@
+# Development Dockerfile for Backend Service
+FROM node:20-alpine
+
+# Add labels
+LABEL maintainer="hackathon-team"
+LABEL description="Backend service for e-commerce application (development)"
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies including dev
+RUN npm install
+
+# Copy source code
+COPY tsconfig.json ./
+COPY src ./src
+
+# Set environment variables
+ENV NODE_ENV=development
+
+# Expose port
+EXPOSE 3847
+
+# Start with hot reload
+CMD ["npm", "run", "dev"]
