@@ -191,6 +191,123 @@ curl http://localhost:27017
 
 **Expected Output:** `Connection refused` or timeout (MongoDB not exposed)
 
+---
+
+## 🐋 Docker Status & Logs
+
+### Container Status
+
+```bash
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+```
+
+**Output:**
+
+```
+NAMES          STATUS                    PORTS
+gateway-prod   Up 36 minutes (healthy)   0.0.0.0:5921->5921/tcp
+backend-prod   Up 36 minutes (healthy)   3847/tcp
+mongo-prod     Up 36 minutes (healthy)   27017/tcp
+```
+
+> ✅ Notice: Only `gateway-prod` has external port mapping (`0.0.0.0:5921`). Backend and MongoDB are internal only.
+
+### Gateway Logs
+
+```bash
+docker logs gateway-prod --tail 10
+```
+
+**Output:**
+
+```
+Gateway listening on port 5921, forwarding to http://backend:3847
+[GET] /health -> http://backend:3847/health
+[GET] /health <- 200 (2ms)
+[POST] /api/products -> http://backend:3847/api/products
+[POST] /api/products <- 201 (7ms)
+[GET] /api/products?page=1&limit=2 -> http://backend:3847/api/products
+[GET] /api/products?page=1&limit=2 <- 200 (13ms)
+```
+
+### Backend Logs
+
+```bash
+docker logs backend-prod --tail 10
+```
+
+**Output:**
+
+```
+Server running on port 3847
+Connected to MongoDB
+[2025-12-01T16:13:13.641Z] POST /api/products
+Product created: new ObjectId("692dbe99396f48c5857bc038")
+[2025-12-01T16:13:21.867Z] GET /api/products
+[2025-12-01T16:14:09.883Z] GET /api/health
+```
+
+### Docker Images
+
+```bash
+docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+```
+
+**Output:**
+
+```
+REPOSITORY        TAG       SIZE
+docker-backend    latest    374MB
+docker-gateway    latest    220MB
+mongo             7         1.13GB
+```
+
+### Docker Networks
+
+```bash
+docker network ls
+```
+
+**Output:**
+
+```
+NAME                      DRIVER
+backend-network-prod      bridge
+backend-network-dev       bridge
+```
+
+### Docker Volumes (Data Persistence)
+
+```bash
+docker volume ls
+```
+
+**Output:**
+
+```
+DRIVER    VOLUME NAME
+local     mongo-data-prod
+local     mongo-data-dev
+local     mongo-config-prod
+local     mongo-config-dev
+```
+
+### Health Check Status
+
+```bash
+docker inspect gateway-prod --format "{{.State.Health.Status}}"
+```
+
+**Output:**
+
+```
+healthy
+```
+
+---
+
+## 📁 Project Structure
+
 ```
 .
 ├── backend/
