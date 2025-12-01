@@ -122,8 +122,7 @@ curl http://localhost:5921/api/products
 │   └── compose.production.yaml
 ├── .gitignore
 ├── Makefile                 # CLI commands
-├── README.md
-└── SOLUTION.md              # Detailed documentation
+└── README.md
 ```
 
 ---
@@ -188,21 +187,53 @@ curl -X PATCH http://localhost:5921/api/products/{id}/stock \
 
 # Delete product
 curl -X DELETE http://localhost:5921/api/products/{id}
+
+# Bulk delete
+curl -X POST http://localhost:5921/api/products/bulk-delete \
+  -H 'Content-Type: application/json' \
+  -d '{"ids":["id1","id2","id3"]}'
+```
+
+### Security Test
+
+```bash
+# Verify backend is NOT directly accessible (should fail/timeout)
+curl http://localhost:3847/api/products
+
+# Verify MongoDB is NOT directly accessible
+curl http://localhost:27017
 ```
 
 ---
 
 ## ⚙️ Makefile Commands
 
+### Docker Services
+
+| Command                      | Description                          |
+| ---------------------------- | ------------------------------------ |
+| `make up`                    | Start services (dev mode by default) |
+| `make up MODE=prod`          | Start services in production mode    |
+| `make down`                  | Stop services                        |
+| `make build`                 | Build containers                     |
+| `make logs`                  | View logs (all services)             |
+| `make logs SERVICE=backend`  | View specific service logs           |
+| `make restart`               | Restart all services                 |
+| `make ps`                    | Show running containers              |
+| `make shell SERVICE=backend` | Open shell in container              |
+
 ### Development
 
-| Command            | Description                   |
-| ------------------ | ----------------------------- |
-| `make dev-up`      | Start development environment |
-| `make dev-down`    | Stop development environment  |
-| `make dev-logs`    | View development logs         |
-| `make dev-restart` | Restart development services  |
-| `make dev-build`   | Build development containers  |
+| Command              | Description                     |
+| -------------------- | ------------------------------- |
+| `make dev-up`        | Start development environment   |
+| `make dev-down`      | Stop development environment    |
+| `make dev-logs`      | View development logs           |
+| `make dev-restart`   | Restart development services    |
+| `make dev-build`     | Build development containers    |
+| `make backend-shell` | Open shell in backend container |
+| `make gateway-shell` | Open shell in gateway container |
+| `make mongo-shell`   | Open MongoDB shell              |
 
 ### Production
 
@@ -226,6 +257,20 @@ curl -X DELETE http://localhost:5921/api/products/{id}
 | `make db-backup`             | Backup MongoDB database             |
 | `make db-reset`              | Reset MongoDB (⚠️ deletes data)     |
 | `make shell SERVICE=backend` | Open shell in container             |
+
+---
+
+## ✅ Features Implemented
+
+### Separate Dev and Prod Configs
+
+- `docker/compose.development.yaml` - Hot reload, volume mounts, debug logging
+- `docker/compose.production.yaml` - Optimized, security hardened, resource limits
+
+### Data Persistence
+
+- Named volumes for MongoDB data (`mongo-data-dev`, `mongo-data-prod`)
+- Data survives container restarts
 
 ---
 
@@ -254,6 +299,15 @@ curl -X DELETE http://localhost:5921/api/products/{id}
 | Tini Init          | Proper signal handling (PID 1)     |
 | .dockerignore      | Excludes unnecessary files         |
 
+### Additional Best Practices
+
+- **Tini init system** - Proper signal handling (PID 1)
+- **Health checks** - All services monitored
+- **Resource limits** - CPU/memory limits in production
+- **Log rotation** - Prevents disk filling
+- **Restart policies** - Auto-recovery from failures
+- **OCI Labels** - Standard image metadata
+
 ---
 
 ## 🌍 Environment Variables
@@ -264,8 +318,8 @@ curl -X DELETE http://localhost:5921/api/products/{id}
 | `MONGO_INITDB_ROOT_PASSWORD` | MongoDB password          | securepassword123               |
 | `MONGO_URI`                  | MongoDB connection string | mongodb://admin:...@mongo:27017 |
 | `MONGO_DATABASE`             | Database name             | ecommerce                       |
-| `BACKEND_PORT`               | Backend port              | 3847 (fixed)                    |
-| `GATEWAY_PORT`               | Gateway port              | 5921 (fixed)                    |
+| `BACKEND_PORT`               | Backend port              | 3847 (DO NOT CHANGE)            |
+| `GATEWAY_PORT`               | Gateway port              | 5921 (DO NOT CHANGE)            |
 | `NODE_ENV`                   | Environment mode          | development                     |
 
 ---
@@ -299,12 +353,3 @@ make db-reset                    # Reset database
 make clean-all
 make dev-up ARGS="--build"
 ```
-
----
-
-## 📚 Documentation
-
-For detailed documentation, see [SOLUTION.md](./SOLUTION.md).
-
----
-
