@@ -101,17 +101,21 @@ curl http://localhost:5921/api/products
 ```bash
 curl http://localhost:5921/health
 ```
+
 **Output:**
+
 ```json
-{"ok":true}
+{ "ok": true }
 ```
 
 ```bash
 curl http://localhost:5921/api/health
 ```
+
 **Output:**
+
 ```json
-{"ok":true}
+{ "ok": true }
 ```
 
 ### Create Product
@@ -121,7 +125,9 @@ curl -X POST http://localhost:5921/api/products \
   -H 'Content-Type: application/json' \
   -d '{"name":"Test Product","price":99.99}'
 ```
+
 **Output:**
+
 ```json
 {
   "name": "Test Product",
@@ -141,7 +147,9 @@ curl -X POST http://localhost:5921/api/products \
 ```bash
 curl http://localhost:5921/api/products
 ```
+
 **Output:**
+
 ```json
 {
   "products": [
@@ -173,12 +181,14 @@ curl http://localhost:5921/api/products
 # Verify backend is NOT directly accessible (should fail/timeout)
 curl http://localhost:3847/api/products
 ```
+
 **Expected Output:** `Connection refused` or timeout (backend not exposed)
 
 ```bash
 # Verify MongoDB is NOT directly accessible
 curl http://localhost:27017
 ```
+
 **Expected Output:** `Connection refused` or timeout (MongoDB not exposed)
 
 ```
