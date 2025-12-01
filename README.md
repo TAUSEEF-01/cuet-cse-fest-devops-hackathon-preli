@@ -1,17 +1,8 @@
-# Hackathon Challenge
+# E-Commerce Microservices Backend
 
-Your challenge is to take this simple e-commerce backend and turn it into a fully containerized microservices setup using Docker and solid DevOps practices.
+A fully containerized e-commerce backend with microservices architecture using Docker, featuring a product management API, API gateway, and MongoDB database.
 
-## Problem Statement
-
-The backend setup consisting of:
-
-- A service for managing products
-- A gateway that forwards API requests
-
-The system must be containerized, secure, optimized, and maintain data persistence across container restarts.
-
-## Architecture
+## 🏗️ Architecture
 
 ```
                     ┌─────────────────┐
@@ -39,125 +30,281 @@ The system must be containerized, secure, optimized, and maintain data persisten
     │ Backend │         │   MongoDB   │
     │(port    │◄────────┤  (port      │
     │ 3847)   │         │  27017)     │
-    │[Not     │         │ [Not        │
-    │Exposed] │         │ Exposed]    │
+    │[Internal│         │ [Internal]  │
     └─────────┘         └─────────────┘
 ```
 
-**Key Points:**
-- Gateway is the only service exposed to external clients (port 5921)
-- All external requests must go through the Gateway
-- Backend and MongoDB should not be exposed to public network
+**Security Design:**
 
-## Project Structure
+- ✅ Gateway is the **only** service exposed to external clients (port 5921)
+- ✅ Backend and MongoDB are isolated in private Docker network
+- ✅ All external requests must go through the Gateway
 
-**DO NOT CHANGE THE PROJECT STRUCTURE.** The following structure must be maintained:
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Make (optional, for CLI commands)
+
+### 1. Setup Environment
+
+Create a `.env` file in the root directory with the following content:
+
+```env
+MONGO_INITDB_ROOT_USERNAME=admin
+MONGO_INITDB_ROOT_PASSWORD=securepassword123
+MONGO_URI=mongodb://admin:securepassword123@mongo:27017
+MONGO_DATABASE=ecommerce
+BACKEND_PORT=3847
+GATEWAY_PORT=5921
+NODE_ENV=development
+```
+
+### 2. Start Services
+
+**Development Mode** (with hot reload):
+
+```bash
+make dev-up
+# or
+docker compose --env-file .env -f docker/compose.development.yaml up -d
+```
+
+**Production Mode** (optimized):
+
+```bash
+make prod-up
+# or
+docker compose --env-file .env -f docker/compose.production.yaml up -d
+```
+
+### 3. Verify Installation
+
+```bash
+# Check health
+curl http://localhost:5921/health        # Gateway
+curl http://localhost:5921/api/health    # Backend via Gateway
+
+# Test API
+curl http://localhost:5921/api/products
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 .
 ├── backend/
-│   ├── Dockerfile
-│   ├── Dockerfile.dev
+│   ├── Dockerfile           # Production multi-stage build
+│   ├── Dockerfile.dev       # Development with hot reload
+│   ├── .dockerignore
+│   ├── package.json
+│   ├── tsconfig.json
 │   └── src/
+│       ├── index.ts         # App entry point
+│       ├── config/          # Database & environment config
+│       ├── models/          # Mongoose schemas
+│       ├── routes/          # API routes
+│       └── types/           # TypeScript types
 ├── gateway/
-│   ├── Dockerfile
-│   ├── Dockerfile.dev
+│   ├── Dockerfile           # Production multi-stage build
+│   ├── Dockerfile.dev       # Development with hot reload
+│   ├── .dockerignore
+│   ├── package.json
 │   └── src/
+│       └── gateway.js       # Proxy server
 ├── docker/
 │   ├── compose.development.yaml
 │   └── compose.production.yaml
-├── Makefile
-└── README.md
+├── .gitignore
+├── Makefile                 # CLI commands
+├── README.md
+└── SOLUTION.md              # Detailed documentation
 ```
 
-## Environment Variables
+---
 
-Create a `.env` file in the root directory with the following variables (do not commit actual values):
+## 🔌 API Reference
 
-```env
-MONGO_INITDB_ROOT_USERNAME=
-MONGO_INITDB_ROOT_PASSWORD=
-MONGO_URI=
-MONGO_DATABASE=
-BACKEND_PORT=3847 # DO NOT CHANGE
-GATEWAY_PORT=5921 # DO NOT CHANGE 
-NODE_ENV=
-```
+### Health Endpoints
 
-## Expectations (Open ended, DO YOUR BEST!!!)
+| Endpoint      | Method | Description          |
+| ------------- | ------ | -------------------- |
+| `/health`     | GET    | Gateway health check |
+| `/api/health` | GET    | Backend health check |
 
-- Separate Dev and Prod configs
-- Data Persistence
-- Follow security basics (limit network exposure, sanitize input) 
-- Docker Image Optimization
-- Makefile CLI Commands for smooth dev and prod deploy experience (TRY TO COMPLETE THE COMMANDS COMMENTED IN THE Makefile)
+### Product Endpoints
 
-**ADD WHAT EVER BEST PRACTICES YOU KNOW**
+| Endpoint                    | Method | Description               |
+| --------------------------- | ------ | ------------------------- |
+| `/api/products`             | GET    | List products (paginated) |
+| `/api/products`             | POST   | Create product            |
+| `/api/products/search`      | GET    | Search products           |
+| `/api/products/stats`       | GET    | Product statistics        |
+| `/api/products/:id`         | GET    | Get product by ID         |
+| `/api/products/:id`         | PUT    | Update product (full)     |
+| `/api/products/:id`         | PATCH  | Update product (partial)  |
+| `/api/products/:id`         | DELETE | Delete product            |
+| `/api/products/:id/stock`   | PATCH  | Update stock              |
+| `/api/products/bulk-delete` | POST   | Bulk delete products      |
 
-## Testing
+### Query Parameters (GET /api/products)
 
-Use the following curl commands to test your implementation.
+| Parameter  | Description                         | Default   |
+| ---------- | ----------------------------------- | --------- |
+| `page`     | Page number                         | 1         |
+| `limit`    | Items per page (max 100)            | 10        |
+| `sort`     | Sort field (name, price, createdAt) | createdAt |
+| `order`    | Sort order (asc, desc)              | desc      |
+| `category` | Filter by category                  | -         |
+| `minPrice` | Minimum price filter                | -         |
+| `maxPrice` | Maximum price filter                | -         |
 
-### Health Checks
+### Example Requests
 
-Check gateway health:
 ```bash
-curl http://localhost:5921/health
-```
-
-Check backend health via gateway:
-```bash
-curl http://localhost:5921/api/health
-```
-
-### Product Management
-
-Create a product:
-```bash
+# Create product
 curl -X POST http://localhost:5921/api/products \
   -H 'Content-Type: application/json' \
-  -d '{"name":"Test Product","price":99.99}'
+  -d '{"name":"Laptop","price":999.99,"description":"Gaming laptop","category":"Electronics","stock":50}'
+
+# Get products with pagination
+curl "http://localhost:5921/api/products?page=1&limit=5&sort=price&order=asc"
+
+# Search products
+curl "http://localhost:5921/api/products/search?q=laptop"
+
+# Get statistics
+curl http://localhost:5921/api/products/stats
+
+# Update stock
+curl -X PATCH http://localhost:5921/api/products/{id}/stock \
+  -H 'Content-Type: application/json' \
+  -d '{"quantity":10,"operation":"increment"}'
+
+# Delete product
+curl -X DELETE http://localhost:5921/api/products/{id}
 ```
 
-Get all products:
+---
+
+## ⚙️ Makefile Commands
+
+### Development
+
+| Command            | Description                   |
+| ------------------ | ----------------------------- |
+| `make dev-up`      | Start development environment |
+| `make dev-down`    | Stop development environment  |
+| `make dev-logs`    | View development logs         |
+| `make dev-restart` | Restart development services  |
+| `make dev-build`   | Build development containers  |
+
+### Production
+
+| Command             | Description                  |
+| ------------------- | ---------------------------- |
+| `make prod-up`      | Start production environment |
+| `make prod-down`    | Stop production environment  |
+| `make prod-logs`    | View production logs         |
+| `make prod-restart` | Restart production services  |
+| `make prod-build`   | Build production containers  |
+
+### Utilities
+
+| Command                      | Description                         |
+| ---------------------------- | ----------------------------------- |
+| `make health`                | Check service health                |
+| `make ps`                    | Show running containers             |
+| `make logs`                  | View all logs                       |
+| `make clean`                 | Remove containers and networks      |
+| `make clean-all`             | Remove everything including volumes |
+| `make db-backup`             | Backup MongoDB database             |
+| `make db-reset`              | Reset MongoDB (⚠️ deletes data)     |
+| `make shell SERVICE=backend` | Open shell in container             |
+
+---
+
+## 🔒 Security Features
+
+| Feature              | Implementation                                 |
+| -------------------- | ---------------------------------------------- |
+| Network Isolation    | Only gateway exposed; backend/MongoDB internal |
+| Non-root Users       | Custom users in all containers                 |
+| Read-only Filesystem | Production containers are read-only            |
+| No New Privileges    | `no-new-privileges:true` in production         |
+| Capability Dropping  | `cap_drop: ALL` on Node.js services            |
+| Input Validation     | Sanitization on all API inputs                 |
+| Health Checks        | All services monitored                         |
+
+---
+
+## 🐳 Docker Optimization
+
+| Optimization       | Description                        |
+| ------------------ | ---------------------------------- |
+| Multi-stage Builds | Separate build and runtime stages  |
+| Alpine Base        | `node:20-alpine` (~50MB vs ~1GB)   |
+| Layer Caching      | Package files copied before source |
+| Dev Deps Pruning   | `npm prune --production`           |
+| Tini Init          | Proper signal handling (PID 1)     |
+| .dockerignore      | Excludes unnecessary files         |
+
+---
+
+## 🌍 Environment Variables
+
+| Variable                     | Description               | Default                         |
+| ---------------------------- | ------------------------- | ------------------------------- |
+| `MONGO_INITDB_ROOT_USERNAME` | MongoDB username          | admin                           |
+| `MONGO_INITDB_ROOT_PASSWORD` | MongoDB password          | securepassword123               |
+| `MONGO_URI`                  | MongoDB connection string | mongodb://admin:...@mongo:27017 |
+| `MONGO_DATABASE`             | Database name             | ecommerce                       |
+| `BACKEND_PORT`               | Backend port              | 3847 (fixed)                    |
+| `GATEWAY_PORT`               | Gateway port              | 5921 (fixed)                    |
+| `NODE_ENV`                   | Environment mode          | development                     |
+
+---
+
+## 🔧 Troubleshooting
+
+### Containers not starting
+
 ```bash
-curl http://localhost:5921/api/products
+make dev-logs                    # Check logs
+make dev-build && make dev-up    # Rebuild and restart
 ```
 
-### Security Test
+### Port already in use
 
-Verify backend is not directly accessible (should fail or be blocked):
 ```bash
-curl http://localhost:3847/api/products
+netstat -ano | findstr :5921     # Windows
+lsof -i :5921                    # Linux/Mac
 ```
 
-## Submission Process
+### MongoDB connection issues
 
-1. **Fork the Repository**
-   - Fork this repository to your GitHub account
-   - The repository must remain **private** during the contest
+```bash
+docker logs mongo-dev            # Check mongo logs
+make db-reset                    # Reset database
+```
 
-2. **Make Repository Public**
-   - In the **last 5 minutes** of the contest, make your repository **public**
-   - Repositories that remain private after the contest ends will not be evaluated
+### Clean restart
 
-3. **Submit Repository URL**
-   - Submit your repository URL at [arena.bongodev.com](https://arena.bongodev.com)
-   - Ensure the URL is correct and accessible
+```bash
+make clean-all
+make dev-up ARGS="--build"
+```
 
-4. **Code Evaluation**
-   - All submissions will be both **automated and manually evaluated**
-   - Plagiarism and code copying will result in disqualification
+---
 
-## Rules
+## 📚 Documentation
 
-- ⚠️ **NO COPYING**: All code must be your original work. Copying code from other participants or external sources will result in immediate disqualification.
+For detailed documentation, see [SOLUTION.md](./SOLUTION.md).
 
-- ⚠️ **NO POST-CONTEST COMMITS**: Pushing any commits to the git repository after the contest ends will result in **disqualification**. All work must be completed and committed before the contest deadline.
-
-- ✅ **Repository Visibility**: Keep your repository private during the contest, then make it public in the last 5 minutes.
-
-- ✅ **Submission Deadline**: Ensure your repository is public and submitted before the contest ends.
-
-Good luck!
+---
 

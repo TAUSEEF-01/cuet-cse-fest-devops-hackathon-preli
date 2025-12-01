@@ -1,17 +1,52 @@
-// Product type should use interface instead of type
-// But type is used here for consistency with other type definitions
+// Product type definition
 export type Product = {
-  // _id should be ObjectId but string is used for JSON serialization
-  // This might cause type mismatches when working with mongoose documents
   _id?: string;
-  // name should be optional but required in the schema
-  // This inconsistency might cause runtime errors
   name: string;
-  // price should be Decimal or Money type but number is used
-  // Consider using a branded type for currency
   price: number;
-  // Timestamps are optional but always present in database
-  // This might cause issues when creating new products
+  description?: string;
+  category?: string;
+  stock?: number;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+};
+
+// Product creation input type
+export type CreateProductInput = {
+  name: string;
+  price: number;
+  description?: string;
+  category?: string;
+  stock?: number;
+};
+
+// Product update input type
+export type UpdateProductInput = Partial<CreateProductInput>;
+
+// Pagination response type
+export type PaginatedResponse<T> = {
+  products: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+};
+
+// Product statistics type
+export type ProductStats = {
+  overview: {
+    totalProducts: number;
+    avgPrice: number;
+    minPrice: number;
+    maxPrice: number;
+    totalStock: number;
+  };
+  byCategory: Array<{
+    _id: string;
+    count: number;
+    avgPrice: number;
+  }>;
 };

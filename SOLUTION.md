@@ -179,27 +179,109 @@ curl http://localhost:5921/api/health
 # Expected: {"ok":true}
 ```
 
-### Product Management
+### Product API Reference
+
+#### Create Product
 
 ```bash
-# Create a product
 curl -X POST http://localhost:5921/api/products \
   -H 'Content-Type: application/json' \
-  -d '{"name":"Test Product","price":99.99}'
+  -d '{"name":"Laptop","price":999.99,"description":"Gaming laptop","category":"Electronics","stock":50}'
+```
 
-# Expected response:
-# {
-#   "name": "Test Product",
-#   "price": 99.99,
-#   "_id": "...",
-#   "createdAt": "...",
-#   "updatedAt": "...",
-#   "__v": 0
-# }
+#### Get All Products (with Pagination)
 
-# Get all products
+```bash
+# Basic
 curl http://localhost:5921/api/products
-# Expected: Array of products
+
+# With pagination and sorting
+curl "http://localhost:5921/api/products?page=1&limit=10&sort=price&order=asc"
+
+# Filter by category
+curl "http://localhost:5921/api/products?category=Electronics"
+
+# Price range
+curl "http://localhost:5921/api/products?minPrice=100&maxPrice=500"
+```
+
+Query Parameters:
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `page` | Page number | 1 |
+| `limit` | Items per page (max 100) | 10 |
+| `sort` | Sort field (name, price, createdAt, updatedAt) | createdAt |
+| `order` | Sort order (asc, desc) | desc |
+| `category` | Filter by category | - |
+| `minPrice` | Minimum price filter | - |
+| `maxPrice` | Maximum price filter | - |
+
+#### Search Products
+
+```bash
+curl "http://localhost:5921/api/products/search?q=laptop"
+```
+
+#### Get Product Statistics
+
+```bash
+curl http://localhost:5921/api/products/stats
+# Returns: { totalProducts, totalValue, avgPrice, categoryBreakdown, lowStockCount }
+```
+
+#### Get Product by ID
+
+```bash
+curl http://localhost:5921/api/products/{id}
+```
+
+#### Update Product (Full Replace)
+
+```bash
+curl -X PUT http://localhost:5921/api/products/{id} \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Updated Name","price":199.99,"description":"Updated","category":"Updated","stock":100}'
+```
+
+#### Partial Update (PATCH)
+
+```bash
+curl -X PATCH http://localhost:5921/api/products/{id} \
+  -H 'Content-Type: application/json' \
+  -d '{"price":149.99}'
+```
+
+#### Update Stock
+
+```bash
+# Increment stock
+curl -X PATCH http://localhost:5921/api/products/{id}/stock \
+  -H 'Content-Type: application/json' \
+  -d '{"quantity":10,"operation":"increment"}'
+
+# Decrement stock
+curl -X PATCH http://localhost:5921/api/products/{id}/stock \
+  -H 'Content-Type: application/json' \
+  -d '{"quantity":5,"operation":"decrement"}'
+
+# Set absolute stock value
+curl -X PATCH http://localhost:5921/api/products/{id}/stock \
+  -H 'Content-Type: application/json' \
+  -d '{"quantity":100,"operation":"set"}'
+```
+
+#### Delete Product
+
+```bash
+curl -X DELETE http://localhost:5921/api/products/{id}
+```
+
+#### Bulk Delete Products
+
+```bash
+curl -X POST http://localhost:5921/api/products/bulk-delete \
+  -H 'Content-Type: application/json' \
+  -d '{"ids":["id1","id2","id3"]}'
 ```
 
 ### Security Test
@@ -222,13 +304,25 @@ Invoke-RestMethod -Uri "http://localhost:5921/health"
 Invoke-RestMethod -Uri "http://localhost:5921/api/health"
 
 # Create product
-Invoke-RestMethod -Uri "http://localhost:5921/api/products" `
-  -Method POST `
-  -ContentType "application/json" `
-  -Body '{"name":"Test Product","price":99.99}'
+$headers = @{"Content-Type"="application/json"}
+$body = '{"name":"Test Product","price":99.99,"description":"A test product","category":"Test","stock":10}'
+Invoke-WebRequest -Uri "http://localhost:5921/api/products" -Method POST -Headers $headers -Body $body
 
-# Get all products
-Invoke-RestMethod -Uri "http://localhost:5921/api/products"
+# Get all products with pagination
+Invoke-RestMethod -Uri "http://localhost:5921/api/products?page=1&limit=5"
+
+# Search products
+Invoke-RestMethod -Uri "http://localhost:5921/api/products/search?q=laptop"
+
+# Get statistics
+Invoke-RestMethod -Uri "http://localhost:5921/api/products/stats"
+
+# Update stock (decrement)
+$body = '{"quantity":5,"operation":"decrement"}'
+Invoke-WebRequest -Uri "http://localhost:5921/api/products/{id}/stock" -Method PATCH -Headers $headers -Body $body
+
+# Delete product
+Invoke-WebRequest -Uri "http://localhost:5921/api/products/{id}" -Method DELETE
 ```
 
 ---
@@ -308,8 +402,6 @@ Invoke-RestMethod -Uri "http://localhost:5921/api/products"
 ├── docker/
 │   ├── compose.development.yaml
 │   └── compose.production.yaml
-├── .env                     # Environment variables (not committed)
-├── .env.example             # Environment template
 ├── .gitignore
 ├── Makefile
 ├── README.md

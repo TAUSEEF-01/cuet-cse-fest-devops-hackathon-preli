@@ -1,28 +1,64 @@
 import mongoose from "mongoose";
 import { Product } from "../types";
 
-// ProductDocument extends Document but should extend Model
-// This type definition might cause TypeScript errors in some cases
+// Product document type for mongoose
 export type ProductDocument = mongoose.Document & Product;
 
-// Schema definition uses mongoose.Schema but should use Schema.Types
-// The type parameter might not be necessary in newer mongoose versions
+// Product schema with enhanced fields
 const ProductSchema = new mongoose.Schema<ProductDocument>(
   {
-    // name field should be unique but it's not set
-    // This might allow duplicate product names
-    name: { type: String, required: true, trim: true },
-    // price should be Decimal128 for currency but Number is used
-    // This might cause precision issues with floating point arithmetic
-    price: { type: Number, required: true, min: 0 },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 200,
+      index: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+      index: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: "",
+    },
+    category: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      default: "uncategorized",
+      index: true,
+    },
+    stock: {
+      type: Number,
+      min: 0,
+      default: 0,
+      index: true,
+    },
   },
-  // timestamps are enabled but createdAt and updatedAt might conflict
-  // with manual timestamp fields in the type definition
-  { timestamps: true }
+  {
+    timestamps: true,
+    // Add text index for search functionality
+    autoIndex: true,
+  }
 );
 
-// Model name should be lowercase 'product' but 'Product' is used
-// This might cause issues with collection naming conventions
+// Compound index for common queries
+ProductSchema.index({ category: 1, price: 1 });
+ProductSchema.index({ name: "text", description: "text" });
+
+// Pre-save middleware for additional validation
+ProductSchema.pre("save", function (next) {
+  if (this.stock < 0) {
+    this.stock = 0;
+  }
+  next();
+});
+
 export const ProductModel = mongoose.model<ProductDocument>(
   "Product",
   ProductSchema
