@@ -6,6 +6,7 @@ services:
   mongo:
     image: mongo:7
     container_name: mongo-prod
+    hostname: mongo
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
@@ -42,6 +43,7 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     container_name: backend-prod
+    hostname: backend
     restart: always
     environment:
       NODE_ENV: production
@@ -85,6 +87,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+    # Security: Drop all capabilities
+    cap_drop:
+      - ALL
 
   # Gateway Service - Only exposed service
   gateway:
@@ -92,6 +97,7 @@ services:
       context: ../gateway
       dockerfile: Dockerfile
     container_name: gateway-prod
+    hostname: gateway
     restart: always
     environment:
       NODE_ENV: production
@@ -136,6 +142,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+    # Security: Drop all capabilities
+    cap_drop:
+      - ALL
 
 # Named volumes for data persistence
 volumes:
