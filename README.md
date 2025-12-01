@@ -94,7 +94,92 @@ curl http://localhost:5921/api/products
 
 ---
 
-## 📁 Project Structure
+## 🧪 Testing & Expected Outputs
+
+### Health Checks
+
+```bash
+curl http://localhost:5921/health
+```
+**Output:**
+```json
+{"ok":true}
+```
+
+```bash
+curl http://localhost:5921/api/health
+```
+**Output:**
+```json
+{"ok":true}
+```
+
+### Create Product
+
+```bash
+curl -X POST http://localhost:5921/api/products \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Test Product","price":99.99}'
+```
+**Output:**
+```json
+{
+  "name": "Test Product",
+  "price": 99.99,
+  "description": "",
+  "category": "uncategorized",
+  "stock": 0,
+  "_id": "692dbe99396f48c5857bc038",
+  "createdAt": "2025-12-01T16:13:13.642Z",
+  "updatedAt": "2025-12-01T16:13:13.642Z",
+  "__v": 0
+}
+```
+
+### Get All Products
+
+```bash
+curl http://localhost:5921/api/products
+```
+**Output:**
+```json
+{
+  "products": [
+    {
+      "_id": "692dbe99396f48c5857bc038",
+      "name": "Test Product",
+      "price": 99.99,
+      "description": "",
+      "category": "uncategorized",
+      "stock": 0,
+      "createdAt": "2025-12-01T16:13:13.642Z",
+      "updatedAt": "2025-12-01T16:13:13.642Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 1,
+    "pages": 1,
+    "hasNext": false,
+    "hasPrev": false
+  }
+}
+```
+
+### Security Test
+
+```bash
+# Verify backend is NOT directly accessible (should fail/timeout)
+curl http://localhost:3847/api/products
+```
+**Expected Output:** `Connection refused` or timeout (backend not exposed)
+
+```bash
+# Verify MongoDB is NOT directly accessible
+curl http://localhost:27017
+```
+**Expected Output:** `Connection refused` or timeout (MongoDB not exposed)
 
 ```
 .
@@ -192,16 +277,6 @@ curl -X DELETE http://localhost:5921/api/products/{id}
 curl -X POST http://localhost:5921/api/products/bulk-delete \
   -H 'Content-Type: application/json' \
   -d '{"ids":["id1","id2","id3"]}'
-```
-
-### Security Test
-
-```bash
-# Verify backend is NOT directly accessible (should fail/timeout)
-curl http://localhost:3847/api/products
-
-# Verify MongoDB is NOT directly accessible
-curl http://localhost:27017
 ```
 
 ---
